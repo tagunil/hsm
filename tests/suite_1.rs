@@ -127,3 +127,19 @@ fn multi_loop() {
         assert!(core::ptr::eq(machine.active(), &FIRST_STATE));
     }
 }
+
+#[test]
+#[should_panic(expected = "Unhandled event passed through root state!")]
+fn unhandled_event() {
+    let mut context = Context;
+    let mut machine = create_machine();
+    assert!(core::ptr::eq(machine.active(), &INITIAL_STATE));
+
+    initial_step(&mut machine, &mut context);
+    assert!(core::ptr::eq(machine.active(), &FIRST_STATE));
+
+    first_step(&mut machine, &mut context);
+    assert!(core::ptr::eq(machine.active(), &SECOND_STATE));
+
+    first_step(&mut machine, &mut context);
+}
