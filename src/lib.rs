@@ -28,20 +28,12 @@ pub trait State<C: 'static, E: 'static> {
 }
 
 pub struct StateMachine<C: 'static, E: 'static> {
-    root_state: &'static dyn State<C, E>,
     active_state: &'static dyn State<C, E>,
 }
 
 impl<C: 'static, E: 'static> StateMachine<C, E> {
     pub fn new(initial_state: &'static dyn State<C, E>) -> Self {
-        let mut topmost_state = initial_state;
-
-        while let Some(parent_state) = topmost_state.parent() {
-            topmost_state = parent_state;
-        }
-
         Self {
-            root_state: topmost_state,
             active_state: initial_state,
         }
     }
@@ -92,17 +84,11 @@ impl<C: 'static, E: 'static> StateMachine<C, E> {
             },
         }
 
-        let mut sources: [&'static dyn State<C, E>; MAX_DEPTH] = [self.root_state; MAX_DEPTH];
-        let mut targets: [&'static dyn State<C, E>; MAX_DEPTH] = [self.root_state; MAX_DEPTH];
+        let mut sources: [&'static dyn State<C, E>; MAX_DEPTH] = [source_state; MAX_DEPTH];
+        let mut targets: [&'static dyn State<C, E>; MAX_DEPTH] = [target_state; MAX_DEPTH];
 
-        let mut source_depth = 0;
-        let mut target_depth = 0;
-
-        sources[source_depth] = source_state;
-        source_depth += 1;
-
-        targets[target_depth] = target_state;
-        target_depth += 1;
+        let mut source_depth = 1;
+        let mut target_depth = 1;
 
         let mut source_top = 0;
         let mut target_top = 0;
