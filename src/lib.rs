@@ -2,11 +2,13 @@
 
 const MAX_DEPTH: usize = 8;
 
+type Behavior<C, E> = Option<fn(&mut C, &E)>;
+
 pub enum Transition<C: 'static, E: 'static> {
     Unknown,
-    Internal,
-    Local(&'static dyn State<C, E>),
-    External(&'static dyn State<C, E>),
+    Internal(Behavior<C, E>),
+    Local(&'static dyn State<C, E>, Behavior<C, E>),
+    External(&'static dyn State<C, E>, Behavior<C, E>),
 }
 
 pub trait State<C: 'static, E: 'static> {
@@ -49,23 +51,6 @@ impl<C: 'static, E: 'static> StateMachine<C, E> {
     }
 
     pub fn dispatch(&mut self, context: &mut C, event: &E) {
-        match self.resolve(context, event) {
-            Transition::<C, E>::External(target_state) => {
-                self.traverse(context, target_state, false);
-            },
-            Transition::<C, E>::Local(target_state) => {
-                self.traverse(context, target_state, true);
-            },
-            Transition::<C, E>::Internal => {
-                self.traverse(context, self.active_state, true);
-            },
-            Transition::<C, E>::Unknown => {
-                panic!("Unhandled event passed through root state!");
-            },
-        }
-    }
-
-    fn resolve(&self, context: &mut C, event: &E) -> Transition<C, E> {
         let mut transition = Transition::<C, E>::Unknown;
         let mut effective_state = self.active_state;
 
@@ -78,21 +63,51 @@ impl<C: 'static, E: 'static> StateMachine<C, E> {
             }
         }
 
-        transition
+        self.traverse(context, event, transition);
     }
 
-    fn traverse(&mut self, context: &mut C, target_state: &'static dyn State<C, E>, local: bool) {
+    fn traverse(&mut self, context: &mut C, event: &E, transition: Transition<C, E>) {
+        let source_state = self.active_state;
+        let mut target_state = source_state;
+        let transition_behavior;
+        let external;
+
+        match transition {
+            Transition::<C, E>::External(state, behavior) => {
+                transition_behavior = behavior;
+                target_state = state;
+                external = true;
+            },
+            Transition::<C, E>::Local(state, behavior) => {
+                transition_behavior = behavior;
+                target_state = state;
+                external = false;
+            },
+            Transition::<C, E>::Internal(behavior) => {
+                transition_behavior = behavior;
+                external = false;
+            },
+            Transition::<C, E>::Unknown => {
+                panic!("Unhandled event passed through root state!");
+            },
+        }
+
         let mut sources: [&'static dyn State<C, E>; MAX_DEPTH] = [self.root_state; MAX_DEPTH];
         let mut targets: [&'static dyn State<C, E>; MAX_DEPTH] = [self.root_state; MAX_DEPTH];
-        let mut source_depth = 1;
-        let mut target_depth = 1;
+
+        let mut source_depth = 0;
+        let mut target_depth = 0;
+
+        sources[source_depth] = source_state;
+        source_depth += 1;
+
+        targets[target_depth] = target_state;
+        target_depth += 1;
+
         let mut source_top = 0;
         let mut target_top = 0;
 
-        sources[0] = self.active_state;
-        targets[0] = target_state;
-
-        if !core::ptr::eq(sources[0], targets[0]) {
+        if !core::ptr::eq(source_state, target_state) {
             let mut topmost_state;
 
             topmost_state = sources[0];
@@ -141,8 +156,15 @@ impl<C: 'static, E: 'static> StateMachine<C, E> {
             sources[i].exit(context);
         }
 
-        if !local {
+        if external {
             sources[source_top].exit(context);
+        }
+
+        if let Some(action) = transition_behavior {
+            action(context, event);
+        }
+
+        if external {
             targets[target_top].entry(context);
         }
 
