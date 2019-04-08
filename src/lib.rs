@@ -50,10 +50,18 @@ impl<C: 'static, E: 'static> StateMachine<C, E> {
 
     pub fn dispatch(&mut self, context: &mut C, event: &E) {
         match self.process(context, event) {
-            Transition::<C, E>::External(target) => self.traverse(context, target, true),
-            Transition::<C, E>::Local(target) => self.traverse(context, target, false),
-            Transition::<C, E>::Internal => (),
-            Transition::<C, E>::Unknown => panic!("Unhandled event passed through root state!"),
+            Transition::<C, E>::External(target_state) => {
+                self.traverse(context, target_state, false);
+            },
+            Transition::<C, E>::Local(target_state) => {
+                self.traverse(context, target_state, true);
+            },
+            Transition::<C, E>::Internal => {
+                self.traverse(context, self.active_state, true);
+            },
+            Transition::<C, E>::Unknown => {
+                panic!("Unhandled event passed through root state!");
+            },
         }
     }
 
@@ -73,62 +81,67 @@ impl<C: 'static, E: 'static> StateMachine<C, E> {
         transition
     }
 
-    fn traverse(&mut self, context: &mut C, target: &'static dyn State<C, E>, external: bool) {
+    fn traverse(&mut self, context: &mut C, target_state: &'static dyn State<C, E>, local: bool) {
         let mut sources: [&'static dyn State<C, E>; MAX_DEPTH] = [self.root_state; MAX_DEPTH];
         let mut targets: [&'static dyn State<C, E>; MAX_DEPTH] = [self.root_state; MAX_DEPTH];
-        let mut common_ancestor = None;
         let mut source_depth = 1;
         let mut target_depth = 1;
         let mut source_top = 0;
         let mut target_top = 0;
-        let mut topmost_state;
 
-        topmost_state = self.active_state;
-        sources[0] = topmost_state;
+        sources[0] = self.active_state;
+        targets[0] = target_state;
 
-        while let Some(parent_state) = topmost_state.parent() {
-            if source_depth == MAX_DEPTH {
-                panic!("State tree depth limit exceeded!");
+        if !core::ptr::eq(sources[0], targets[0]) {
+            let mut topmost_state;
+
+            topmost_state = sources[0];
+
+            while let Some(parent_state) = topmost_state.parent() {
+                if source_depth == MAX_DEPTH {
+                    panic!("State tree depth limit exceeded!");
+                }
+
+                topmost_state = parent_state;
+
+                sources[source_depth] = topmost_state;
+                source_depth += 1;
             }
 
-            topmost_state = parent_state;
+            topmost_state = targets[0];
 
-            sources[source_depth] = topmost_state;
-            source_depth += 1;
-        }
+            while let Some(parent_state) = topmost_state.parent() {
+                if target_depth == MAX_DEPTH {
+                    panic!("State tree depth limit exceeded!");
+                }
 
-        topmost_state = target;
-        targets[0] = topmost_state;
+                topmost_state = parent_state;
 
-        while let Some(parent_state) = topmost_state.parent() {
-            if target_depth == MAX_DEPTH {
-                panic!("State tree depth limit exceeded!");
+                targets[target_depth] = topmost_state;
+                target_depth += 1;
             }
 
-            topmost_state = parent_state;
+            let mut common_ancestor = None;
 
-            targets[target_depth] = topmost_state;
-            target_depth += 1;
-        }
-
-        'outer: for i in 0..source_depth {
-            'inner: for j in 0..target_depth {
-                if core::ptr::eq(sources[i], targets[j]) {
-                    common_ancestor = Some(sources[i]);
-                    source_top = i;
-                    target_top = j;
-                    break 'outer;
+            'outer: for i in 0..source_depth {
+                'inner: for j in 0..target_depth {
+                    if core::ptr::eq(sources[i], targets[j]) {
+                        common_ancestor = Some(sources[i]);
+                        source_top = i;
+                        target_top = j;
+                        break 'outer;
+                    }
                 }
             }
-        }
 
-        common_ancestor.expect("Common ancestor has not been found!");
+            common_ancestor.expect("Common ancestor has not been found!");
+        }
 
         for i in 0..source_top {
             sources[i].exit(context);
         }
 
-        if external {
+        if !local {
             sources[source_top].exit(context);
             targets[target_top].entry(context);
         }
@@ -137,6 +150,6 @@ impl<C: 'static, E: 'static> StateMachine<C, E> {
             targets[j].entry(context);
         }
 
-        self.active_state = target;
+        self.active_state = target_state;
     }
 }
