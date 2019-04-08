@@ -73,49 +73,57 @@ static FIRST_STATE: FirstState = FirstState;
 static SECOND_STATE: SecondState = SecondState;
 static THIRD_STATE: ThirdState = ThirdState;
 
-fn initialize(context: &mut Context) -> hsm::StateMachine<Context, Event> {
-    let mut machine = hsm::StateMachine::<Context, Event>::new(&INITIAL_STATE);
-    assert!(core::ptr::eq(machine.active(), &INITIAL_STATE));
+fn create_machine() -> hsm::StateMachine<Context, Event> {
+    hsm::StateMachine::<Context, Event>::new(&INITIAL_STATE)
+}
 
+fn initial_step(machine: &mut hsm::StateMachine<Context, Event>, context: &mut Context) {
     let initial_event = Event::Initial;
     machine.dispatch(context, &initial_event);
-    assert!(core::ptr::eq(machine.active(), &FIRST_STATE));
-
-    machine
 }
 
 #[test]
 fn startup() {
     let mut context = Context;
-    initialize(&mut context);
+    let mut machine = create_machine();
+    assert!(core::ptr::eq(machine.active(), &INITIAL_STATE));
+
+    initial_step(&mut machine, &mut context);
+    assert!(core::ptr::eq(machine.active(), &FIRST_STATE));
 }
 
 fn first_step(machine: &mut hsm::StateMachine<Context, Event>, context: &mut Context) {
     let first_event = Event::First;
     machine.dispatch(context, &first_event);
-    assert!(core::ptr::eq(machine.active(), &SECOND_STATE));
 }
 
 fn second_step(machine: &mut hsm::StateMachine<Context, Event>, context: &mut Context) {
     let second_event = Event::Second;
     machine.dispatch(context, &second_event);
-    assert!(core::ptr::eq(machine.active(), &THIRD_STATE));
 }
 
 fn third_step(machine: &mut hsm::StateMachine<Context, Event>, context: &mut Context) {
     let third_event = Event::Third;
     machine.dispatch(context, &third_event);
-    assert!(core::ptr::eq(machine.active(), &FIRST_STATE));
 }
 
 #[test]
 fn multi_loop() {
     let mut context = Context;
-    let mut machine = initialize(&mut context);
+    let mut machine = create_machine();
+    assert!(core::ptr::eq(machine.active(), &INITIAL_STATE));
+
+    initial_step(&mut machine, &mut context);
+    assert!(core::ptr::eq(machine.active(), &FIRST_STATE));
 
     for _ in 0..1000 {
         first_step(&mut machine, &mut context);
+        assert!(core::ptr::eq(machine.active(), &SECOND_STATE));
+
         second_step(&mut machine, &mut context);
+        assert!(core::ptr::eq(machine.active(), &THIRD_STATE));
+
         third_step(&mut machine, &mut context);
+        assert!(core::ptr::eq(machine.active(), &FIRST_STATE));
     }
 }
