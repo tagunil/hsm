@@ -1,9 +1,15 @@
 use hsm;
 
 struct Context {
-    first: usize,
-    second: usize,
-    third: usize,
+    first_entry: usize,
+    second_entry: usize,
+    third_entry: usize,
+    first_action: usize,
+    second_action: usize,
+    third_action: usize,
+    first_exit: usize,
+    second_exit: usize,
+    third_exit: usize,
 }
 
 enum Event {
@@ -43,13 +49,17 @@ impl hsm::State<Context, Event> for InitialState {
 
 impl FirstState {
     fn action(context: &mut Context, _: &Event) {
-        context.first += 1;
+        context.first_action += 1;
     }
 }
 
 impl hsm::State<Context, Event> for FirstState {
     fn parent(&self) -> Option<&'static dyn hsm::State<Context, Event>> {
         Some(&ROOT_STATE)
+    }
+
+    fn entry(&self, context: &mut Context) {
+        context.first_entry += 1;
     }
 
     fn transition(&self, _: &mut Context, event: &Event) -> Transition {
@@ -60,17 +70,25 @@ impl hsm::State<Context, Event> for FirstState {
             _ => hsm::Transition::<Context, Event>::Unknown,
         }
     }
+
+    fn exit(&self, context: &mut Context) {
+        context.first_exit += 1;
+    }
 }
 
 impl SecondState {
     fn action(context: &mut Context, _: &Event) {
-        context.second += 1;
+        context.second_action += 1;
     }
 }
 
 impl hsm::State<Context, Event> for SecondState {
     fn parent(&self) -> Option<&'static dyn hsm::State<Context, Event>> {
         Some(&FIRST_STATE)
+    }
+
+    fn entry(&self, context: &mut Context) {
+        context.second_entry += 1;
     }
 
     fn transition(&self, _: &mut Context, event: &Event) -> Transition {
@@ -81,17 +99,25 @@ impl hsm::State<Context, Event> for SecondState {
             _ => hsm::Transition::<Context, Event>::Unknown,
         }
     }
+
+    fn exit(&self, context: &mut Context) {
+        context.second_exit += 1;
+    }
 }
 
 impl ThirdState {
     fn action(context: &mut Context, _: &Event) {
-        context.third += 1;
+        context.third_action += 1;
     }
 }
 
 impl hsm::State<Context, Event> for ThirdState {
     fn parent(&self) -> Option<&'static dyn hsm::State<Context, Event>> {
         Some(&SECOND_STATE)
+    }
+
+    fn entry(&self, context: &mut Context) {
+        context.third_entry += 1;
     }
 
     fn transition(&self, _: &mut Context, event: &Event) -> Transition {
@@ -101,6 +127,10 @@ impl hsm::State<Context, Event> for ThirdState {
             Event::Down => hsm::Transition::<Context, Event>::Internal(None),
             _ => hsm::Transition::<Context, Event>::Unknown,
         }
+    }
+
+    fn exit(&self, context: &mut Context) {
+        context.third_exit += 1;
     }
 }
 
@@ -122,9 +152,15 @@ fn initial_step(machine: &mut StateMachine, context: &mut Context) {
 #[test]
 fn startup() {
     let mut context = Context {
-        first: 0,
-        second: 0,
-        third: 0,
+        first_entry: 0,
+        second_entry: 0,
+        third_entry: 0,
+        first_action: 0,
+        second_action: 0,
+        third_action: 0,
+        first_exit: 0,
+        second_exit: 0,
+        third_exit: 0,
     };
     let mut machine = create_machine();
     assert!(core::ptr::eq(machine.active(), &INITIAL_STATE));
@@ -161,43 +197,54 @@ fn down_step(machine: &mut StateMachine, context: &mut Context) {
 #[test]
 fn multi_ladder() {
     let mut context = Context {
-        first: 0,
-        second: 0,
-        third: 0,
+        first_entry: 0,
+        second_entry: 0,
+        third_entry: 0,
+        first_action: 0,
+        second_action: 0,
+        third_action: 0,
+        first_exit: 0,
+        second_exit: 0,
+        third_exit: 0,
     };
     let mut machine = create_machine();
     assert!(core::ptr::eq(machine.active(), &INITIAL_STATE));
 
     initial_step(&mut machine, &mut context);
     assert!(core::ptr::eq(machine.active(), &FIRST_STATE));
+    assert_eq!(context.first_entry, 1);
 
     for i in 0..1000 {
         first_step(&mut machine, &mut context);
         assert!(core::ptr::eq(machine.active(), &FIRST_STATE));
-        assert_eq!(context.first, i + 1);
+        assert_eq!(context.first_action, i + 1);
 
         down_step(&mut machine, &mut context);
         assert!(core::ptr::eq(machine.active(), &SECOND_STATE));
+        assert_eq!(context.second_entry, i + 1);
 
         second_step(&mut machine, &mut context);
         assert!(core::ptr::eq(machine.active(), &SECOND_STATE));
-        assert_eq!(context.second, 2 * i + 1);
+        assert_eq!(context.second_action, 2 * i + 1);
 
         down_step(&mut machine, &mut context);
         assert!(core::ptr::eq(machine.active(), &THIRD_STATE));
+        assert_eq!(context.third_entry, i + 1);
 
         third_step(&mut machine, &mut context);
         assert!(core::ptr::eq(machine.active(), &THIRD_STATE));
-        assert_eq!(context.third, i + 1);
+        assert_eq!(context.third_action, i + 1);
 
         up_step(&mut machine, &mut context);
         assert!(core::ptr::eq(machine.active(), &SECOND_STATE));
+        assert_eq!(context.third_exit, i + 1);
 
         second_step(&mut machine, &mut context);
         assert!(core::ptr::eq(machine.active(), &SECOND_STATE));
-        assert_eq!(context.second, 2 * i + 2);
+        assert_eq!(context.second_action, 2 * i + 2);
 
         up_step(&mut machine, &mut context);
         assert!(core::ptr::eq(machine.active(), &FIRST_STATE));
+        assert_eq!(context.second_exit, i + 1);
     }
 }
