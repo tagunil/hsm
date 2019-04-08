@@ -14,14 +14,14 @@ pub trait State<C: 'static, E: 'static> {
         None
     }
 
-    fn entry(&self, _context: &mut C) {
+    fn entry(&self, _: &mut C) {
     }
 
-    fn process(&self, _context: &mut C, _event: &E) -> Transition<C, E> {
+    fn transition(&self, _: &mut C, _: &E) -> Transition<C, E> {
         Transition::<C, E>::Unknown
     }
 
-    fn exit(&self, _context: &mut C) {
+    fn exit(&self, _: &mut C) {
     }
 }
 
@@ -49,7 +49,7 @@ impl<C: 'static, E: 'static> StateMachine<C, E> {
     }
 
     pub fn dispatch(&mut self, context: &mut C, event: &E) {
-        match self.process(context, event) {
+        match self.resolve(context, event) {
             Transition::<C, E>::External(target_state) => {
                 self.traverse(context, target_state, false);
             },
@@ -65,12 +65,12 @@ impl<C: 'static, E: 'static> StateMachine<C, E> {
         }
     }
 
-    fn process(&self, context: &mut C, event: &E) -> Transition<C, E> {
+    fn resolve(&self, context: &mut C, event: &E) -> Transition<C, E> {
         let mut transition = Transition::<C, E>::Unknown;
         let mut effective_state = self.active_state;
 
         while let Transition::<C, E>::Unknown = transition {
-            transition = effective_state.process(context, event);
+            transition = effective_state.transition(context, event);
 
             match effective_state.parent() {
                 Some(parent_state) => effective_state = parent_state,
