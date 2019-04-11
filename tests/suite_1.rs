@@ -29,8 +29,7 @@ struct FirstState;
 struct SecondState;
 struct ThirdState;
 
-impl hsm::State<Context, Event> for RootState {
-}
+impl hsm::State<Context, Event> for RootState {}
 
 impl hsm::State<Context, Event> for InitialState {
     fn parent(&self) -> Option<&'static dyn hsm::State<Context, Event>> {
@@ -56,7 +55,7 @@ impl hsm::State<Context, Event> for FirstState {
             Event::First => {
                 context.first_action += 1;
                 hsm::Transition::<Context, Event>::Local(&SECOND_STATE, None)
-            },
+            }
             _ => hsm::Transition::<Context, Event>::Unknown,
         }
     }
@@ -80,7 +79,7 @@ impl hsm::State<Context, Event> for SecondState {
             Event::Second => {
                 context.second_action += 1;
                 hsm::Transition::<Context, Event>::Local(&THIRD_STATE, None)
-            },
+            }
             _ => hsm::Transition::<Context, Event>::Unknown,
         }
     }
@@ -104,7 +103,7 @@ impl hsm::State<Context, Event> for ThirdState {
             Event::Third => {
                 context.third_action += 1;
                 hsm::Transition::<Context, Event>::Local(&FIRST_STATE, None)
-            },
+            }
             _ => hsm::Transition::<Context, Event>::Unknown,
         }
     }

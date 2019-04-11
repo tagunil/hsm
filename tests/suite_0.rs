@@ -21,8 +21,7 @@ struct RootState;
 struct InitialState;
 struct TheState;
 
-impl hsm::State<Context, Event> for RootState {
-}
+impl hsm::State<Context, Event> for RootState {}
 
 impl hsm::State<Context, Event> for InitialState {
     fn parent(&self) -> Option<&'static dyn hsm::State<Context, Event>> {
@@ -48,11 +47,11 @@ impl hsm::State<Context, Event> for TheState {
             Event::Internal => {
                 context.internal_action += 1;
                 hsm::Transition::<Context, Event>::Internal(None)
-            },
+            }
             Event::External => {
                 context.external_action += 1;
                 hsm::Transition::<Context, Event>::External(&THE_STATE, None)
-            },
+            }
             _ => hsm::Transition::<Context, Event>::Unknown,
         }
     }

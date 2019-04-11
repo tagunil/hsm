@@ -67,7 +67,7 @@ impl hsm::State<Context, Event> for FirstState {
         match event {
             Event::Down => {
                 hsm::Transition::<Context, Event>::Local(&SECOND_STATE, Some(Self::action))
-            },
+            }
             _ => hsm::Transition::<Context, Event>::Unknown,
         }
     }
@@ -96,7 +96,7 @@ impl hsm::State<Context, Event> for SecondState {
         match event {
             Event::Jump => {
                 hsm::Transition::<Context, Event>::Local(&THIRD_STATE, Some(Self::action))
-            },
+            }
             _ => hsm::Transition::<Context, Event>::Unknown,
         }
     }
@@ -125,7 +125,7 @@ impl hsm::State<Context, Event> for ThirdState {
         match event {
             Event::Down => {
                 hsm::Transition::<Context, Event>::Local(&FOURTH_STATE, Some(Self::action))
-            },
+            }
             _ => hsm::Transition::<Context, Event>::Unknown,
         }
     }
@@ -154,7 +154,7 @@ impl hsm::State<Context, Event> for FourthState {
         match event {
             Event::Jump => {
                 hsm::Transition::<Context, Event>::Local(&FIRST_STATE, Some(Self::action))
-            },
+            }
             _ => hsm::Transition::<Context, Event>::Unknown,
         }
     }

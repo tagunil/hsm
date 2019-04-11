@@ -16,15 +16,13 @@ pub trait State<C: 'static, E: 'static> {
         None
     }
 
-    fn entry(&self, _context: &mut C) {
-    }
+    fn entry(&self, _context: &mut C) {}
 
     fn transition(&self, _context: &mut C, _event: &E) -> Transition<C, E> {
         Transition::<C, E>::Unknown
     }
 
-    fn exit(&self, _context: &mut C) {
-    }
+    fn exit(&self, _context: &mut C) {}
 }
 
 pub struct StateMachine<C: 'static, E: 'static> {
@@ -69,19 +67,19 @@ impl<C: 'static, E: 'static> StateMachine<C, E> {
                 transition_behavior = behavior;
                 target_state = state;
                 external = true;
-            },
+            }
             Transition::<C, E>::Local(state, behavior) => {
                 transition_behavior = behavior;
                 target_state = state;
                 external = false;
-            },
+            }
             Transition::<C, E>::Internal(behavior) => {
                 transition_behavior = behavior;
                 external = false;
-            },
+            }
             Transition::<C, E>::Unknown => {
                 panic!("Unhandled event passed through root state!");
-            },
+            }
         }
 
         let mut sources: [&'static dyn State<C, E>; MAX_DEPTH] = [source_state; MAX_DEPTH];
