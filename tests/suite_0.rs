@@ -29,7 +29,7 @@ impl hsm::State<Context, Event> for InitialState {
         Some(&ROOT_STATE)
     }
 
-    fn transition(&self, _: &mut Context, _: &Event) -> Transition {
+    fn transition(&self, _context: &mut Context, _event: &Event) -> Transition {
         hsm::Transition::<Context, Event>::Local(&THE_STATE, None)
     }
 }

@@ -16,14 +16,14 @@ pub trait State<C: 'static, E: 'static> {
         None
     }
 
-    fn entry(&self, _: &mut C) {
+    fn entry(&self, _context: &mut C) {
     }
 
-    fn transition(&self, _: &mut C, _: &E) -> Transition<C, E> {
+    fn transition(&self, _context: &mut C, _event: &E) -> Transition<C, E> {
         Transition::<C, E>::Unknown
     }
 
-    fn exit(&self, _: &mut C) {
+    fn exit(&self, _context: &mut C) {
     }
 }
 
