@@ -37,7 +37,7 @@ impl hsm::State<Context, Event> for InitialState {
     }
 
     fn transition(&self, _context: &mut Context, _event: &Event) -> Transition {
-        hsm::Transition::<Context, Event>::Local(&FIRST_STATE, None)
+        Transition::Local(&FIRST_STATE, None)
     }
 }
 
@@ -54,9 +54,9 @@ impl hsm::State<Context, Event> for FirstState {
         match event {
             Event::First => {
                 context.first_action += 1;
-                hsm::Transition::<Context, Event>::Local(&SECOND_STATE, None)
+                Transition::Local(&SECOND_STATE, None)
             }
-            _ => hsm::Transition::<Context, Event>::Unknown,
+            _ => Transition::Unknown,
         }
     }
 
@@ -78,9 +78,9 @@ impl hsm::State<Context, Event> for SecondState {
         match event {
             Event::Second => {
                 context.second_action += 1;
-                hsm::Transition::<Context, Event>::Local(&THIRD_STATE, None)
+                Transition::Local(&THIRD_STATE, None)
             }
-            _ => hsm::Transition::<Context, Event>::Unknown,
+            _ => Transition::Unknown,
         }
     }
 
@@ -102,9 +102,9 @@ impl hsm::State<Context, Event> for ThirdState {
         match event {
             Event::Third => {
                 context.third_action += 1;
-                hsm::Transition::<Context, Event>::Local(&FIRST_STATE, None)
+                Transition::Local(&FIRST_STATE, None)
             }
-            _ => hsm::Transition::<Context, Event>::Unknown,
+            _ => Transition::Unknown,
         }
     }
 

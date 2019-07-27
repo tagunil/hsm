@@ -34,7 +34,7 @@ struct FourthState;
 
 impl hsm::State<Context, Event> for RootState {
     fn transition(&self, _context: &mut Context, _event: &Event) -> Transition {
-        hsm::Transition::<Context, Event>::Internal(None)
+        Transition::Internal(None)
     }
 }
 
@@ -44,7 +44,7 @@ impl hsm::State<Context, Event> for InitialState {
     }
 
     fn transition(&self, _context: &mut Context, _event: &Event) -> Transition {
-        hsm::Transition::<Context, Event>::Local(&FIRST_STATE, None)
+        Transition::Local(&FIRST_STATE, None)
     }
 }
 
@@ -65,10 +65,8 @@ impl hsm::State<Context, Event> for FirstState {
 
     fn transition(&self, _context: &mut Context, event: &Event) -> Transition {
         match event {
-            Event::Down => {
-                hsm::Transition::<Context, Event>::Local(&SECOND_STATE, Some(Self::action))
-            }
-            _ => hsm::Transition::<Context, Event>::Unknown,
+            Event::Down => Transition::Local(&SECOND_STATE, Some(Self::action)),
+            _ => Transition::Unknown,
         }
     }
 
@@ -94,10 +92,8 @@ impl hsm::State<Context, Event> for SecondState {
 
     fn transition(&self, _context: &mut Context, event: &Event) -> Transition {
         match event {
-            Event::Jump => {
-                hsm::Transition::<Context, Event>::Local(&THIRD_STATE, Some(Self::action))
-            }
-            _ => hsm::Transition::<Context, Event>::Unknown,
+            Event::Jump => Transition::Local(&THIRD_STATE, Some(Self::action)),
+            _ => Transition::Unknown,
         }
     }
 
@@ -123,10 +119,8 @@ impl hsm::State<Context, Event> for ThirdState {
 
     fn transition(&self, _context: &mut Context, event: &Event) -> Transition {
         match event {
-            Event::Down => {
-                hsm::Transition::<Context, Event>::Local(&FOURTH_STATE, Some(Self::action))
-            }
-            _ => hsm::Transition::<Context, Event>::Unknown,
+            Event::Down => Transition::Local(&FOURTH_STATE, Some(Self::action)),
+            _ => Transition::Unknown,
         }
     }
 
@@ -152,10 +146,8 @@ impl hsm::State<Context, Event> for FourthState {
 
     fn transition(&self, _context: &mut Context, event: &Event) -> Transition {
         match event {
-            Event::Jump => {
-                hsm::Transition::<Context, Event>::Local(&FIRST_STATE, Some(Self::action))
-            }
-            _ => hsm::Transition::<Context, Event>::Unknown,
+            Event::Jump => Transition::Local(&FIRST_STATE, Some(Self::action)),
+            _ => Transition::Unknown,
         }
     }
 

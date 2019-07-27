@@ -29,7 +29,7 @@ impl hsm::State<Context, Event> for InitialState {
     }
 
     fn transition(&self, _context: &mut Context, _event: &Event) -> Transition {
-        hsm::Transition::<Context, Event>::Local(&THE_STATE, None)
+        Transition::Local(&THE_STATE, None)
     }
 }
 
@@ -46,13 +46,13 @@ impl hsm::State<Context, Event> for TheState {
         match event {
             Event::Internal => {
                 context.internal_action += 1;
-                hsm::Transition::<Context, Event>::Internal(None)
+                Transition::Internal(None)
             }
             Event::External => {
                 context.external_action += 1;
-                hsm::Transition::<Context, Event>::External(&THE_STATE, None)
+                Transition::External(&THE_STATE, None)
             }
-            _ => hsm::Transition::<Context, Event>::Unknown,
+            _ => Transition::Unknown,
         }
     }
 
